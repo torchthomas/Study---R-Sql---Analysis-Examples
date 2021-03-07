@@ -7,4 +7,4 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
 # R packages
   - olsrr; for model assessment/detection (from ols, lasso, ridge) 
   - Rfast
-  - RcppEigen; for fast OLS
+  - RcppEigen; for fast regressions/glm
