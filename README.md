@@ -1,5 +1,5 @@
 # Studying
-  -DISCLAIMER: I've added things that are from personal notes, so most of what I have written at the time this repo was made are things I already studied---this is a needed disclaimer since I made my GitHub around the time I started job-hunting to showcase past and present work.
+  - DISCLAIMER: I've added things that are from personal notes, so most of what I have written at the time this repo was made are things I already studied---this is a needed disclaimer since I made my GitHub around the time I started job-hunting to showcase past and present work.
 
 This repo will be for my own personal studying. However, it may be useful for others.
 
@@ -11,5 +11,5 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   - Rfast
   - RcppEigen; for fast regressions/glm
 # SQL related
-  - SQL cookbook by Molinaro
+  - SQL cookbook by Molinaro and de Graaf
 
