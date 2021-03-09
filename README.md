@@ -13,3 +13,5 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
 # SQL related
   - SQL cookbook by Molinaro and de Graaf
 
+# Books
+  - An Introduction to Statistical Learning with Applications in R by Gareth et al 2014; I follow this book the code portion of this repo
