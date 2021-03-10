@@ -1,4 +1,4 @@
-# Studying
+# Studying/R Scripts/Minor Analyses
   - DISCLAIMER: I've added things that are from personal notes, so most of what I have written at the time this repo was made are things I already studied---this is a needed disclaimer since I made my GitHub around the time I started job-hunting to showcase past and present work.
 
 This repo will be for my own personal studying. However, it may be useful for others.
