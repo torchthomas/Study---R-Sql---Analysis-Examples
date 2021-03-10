@@ -10,6 +10,7 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   - olsrr; for model assessment/detection (from ols, lasso, ridge) 
   - Rfast
   - RcppEigen; for fast regressions/glm
+  - lme4, nlme; for linear and nonlinear mixed models
 # SQL related
   - SQL cookbook by Molinaro and de Graaf
 
