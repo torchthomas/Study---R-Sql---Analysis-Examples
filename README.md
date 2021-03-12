@@ -16,7 +16,7 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   - lme4, nlme; for linear and nonlinear mixed models
   - 
   ## Docker (in R)
-  - https://colinfay.me/docker-r-reproducibility/
+  - Discussion of how to use Docker with R (esp. emphasis on the reading list at the bottom): https://colinfay.me/docker-r-reproducibility/
   
 # SQL related
   - SQL cookbook by Molinaro and de Graaf
