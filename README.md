@@ -13,7 +13,7 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   - olsrr; for model assessment/detection (from ols, lasso, ridge) 
   - Rfast
   - RcppEigen; for fast regressions/glm
-  - lme4, nlme; for linear and nonlinear mixed models
+  - lme4, nlme; for linear and nonlinear mixed models (see discussion of meanings https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
   - 
   ## Docker (in R)
   - Discussion of how to use Docker with R (esp. emphasis on the reading list at the bottom): https://colinfay.me/docker-r-reproducibility/
