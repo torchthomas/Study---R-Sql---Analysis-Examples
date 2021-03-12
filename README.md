@@ -7,15 +7,19 @@ This repo is especially for revisiting subjects/papers/books/research materials 
 
 This might seem like a weird way to keep my learning public, but it's a fun way to let other know what I've thought was interesting or spent my time learning.
 # R related
+  ## Posts
+  - Discussion of hardware to make running R more efficient: https://csgillespie.github.io/efficientR/hardware.html
+  ## Packages
   - olsrr; for model assessment/detection (from ols, lasso, ridge) 
   - Rfast
   - RcppEigen; for fast regressions/glm
   - lme4, nlme; for linear and nonlinear mixed models
+  - 
+  ## Docker (in R)
+  - https://colinfay.me/docker-r-reproducibility/
+  
 # SQL related
   - SQL cookbook by Molinaro and de Graaf
-
-## Docker (in R)
-  - https://colinfay.me/docker-r-reproducibility/
 
 # Books
   - An Introduction to Statistical Learning with Applications in R by Gareth et al 2014; I follow this book the code portion of this repo
