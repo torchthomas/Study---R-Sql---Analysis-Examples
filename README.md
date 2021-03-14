@@ -19,6 +19,8 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   - Discussion of how to use Docker with R (esp. emphasis on the reading list at the bottom): https://colinfay.me/docker-r-reproducibility/
   
 # SQL related
+  -Interview_SQL_queries.sql contains a small selection of queries I could gather in 10 minutes. Since I'm interviewing for jobs I figured I might as well as some of these in to at least communicate some competency, I'll grow this file when I have more time. I'm not sure if it's posible to disclose the questions but see the comments in the code. 
+  # Book/Reading
   - SQL cookbook by Molinaro and de Graaf
 
 # Books
