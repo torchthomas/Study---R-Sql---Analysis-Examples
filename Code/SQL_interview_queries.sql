@@ -1,20 +1,20 @@
 -- Thomas Devine
--- (My)SQL QUERIES from a website that posted interview questions. Since these are just my answers and the question at hand, I think it's ok to share these since I'm not reconstructing the databases to go with the questions 
+-- (My)SQL QUERIES from a website that posted interview questions.
 -- /////////////////////////////////////////////////////////////////////////
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Over budget on a project is defined when the salaries, prorated to the day, exceed the budget of the project.
 -- For example, if Alice and Bob both combined income make 200K and work on a project of a budget of 50K that takes half a year, then the project is over budget given 0.5 * 200K = 100K > 50K.
 -- Write a query to select all projects that are over budget. Assume that employees only work on one project at a time.
 select title,project_forecast 
-    from(select title, budget, datediff(end_date,start_date)/365 *sum(salary) as project_forecast
-              from employees e
-        join employees_projects ep
-            on e.id =ep.employee_id
-        join projects p
-            on ep.project_id = p.id
-        group by 1,2
-        ) s1
-        where project_forecast>budget
+from(select title, budget, datediff(end_date,start_date)/365 *sum(salary) as project_forecast
+      from employees e
+join employees_projects ep
+    on e.id =ep.employee_id
+join projects p
+    on ep.project_id = p.id
+group by 1,2
+) s1
+where project_forecast>budget
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- We're given three tables representing a forum of users and their comments on posts.
 -- Write a query to get the top ten users that got the most upvotes on their comments written in 2020. 
@@ -135,14 +135,14 @@ LIMIT 1 offset 1
     -- MY NOTES: 3 tables, transactions, users, products, w/ ea. having id for respective [tablename]_id type
 select distinct y.name as users_less_than
 from(select x.id, x.name, x.quantity, x.tbill
-     from(select t.id, t.user_id, u.name, t.quantity, p.price*t.quantity as tbill
-         from transactions t 
-            left join users u 
-                on u.id = t.user_id
-            left join products p
-                on p.id = t.product_id) x
-     group by x.id
-     having (x.tbill<500 or x.quantity<=2)
+	from(select t.id, t.user_id, u.name, t.quantity, p.price*t.quantity as tbill
+	 from transactions t 
+	    left join users u 
+		on u.id = t.user_id
+	    left join products p
+		on p.id = t.product_id) x
+	group by x.id
+	having (x.tbill<500 or x.quantity<=2)
 ) y
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given three tables: user_dimension, account_dimension, and download_facts, find the average number of downloads for free vs paying customers broken out by day.
@@ -174,6 +174,94 @@ from(SELECT t1.*,
 FROM bank_transactions  t1) t
 where t.rn=1
 order by created_at asc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to identify customers who placed more than three transactions each in both 2019 and 2020.
+SELECT 
+temp.name AS customer_name
+FROM (
+    SELECT name,
+        SUM(CASE WHEN YEAR(t.created_at)= '2019' THEN 1 ELSE 0 END) AS t_2019,
+        SUM(CASE WHEN YEAR(t.created_at)= '2020' THEN 1 ELSE 0 END) AS t_2020
+    FROM transactions t
+    JOIN users u
+        ON u.id = user_id
+    GROUP BY 1
+    HAVING t_2019 > 3 AND t_2020 > 3
+) temp
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a SQL query to create a histogram of number of comments per user in the month of January 2020. Assume bin buckets class intervals of one.
+with h as (
+    select u.id, COUNT(c.user_id) AS comments_count  
+        from comments c
+    right join users u
+        on u.id=c.user_id and c.created_at between "2020-01-01" and "2020-01-31"
+    group by u.id
+)
+select comments_count, count(*) AS frequency 
+    from h
+group by comments_count 
+order by comments_count asc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- An ads table holds an ID and the advertisement name like "Labor day shirts sale". The feed_comments table holds the comments on ads by different users that occurs in the regular feed. The moments_comments table holds the comments on ads by different users in the moments section.
+-- Write a query to get the percentage of comments, by ad, that occurs in the feed versus mentions sections of the app.
+SELECT a.name,
+100*SUM(CASE
+            WHEN f.comment_id IS NULL THEN 0
+            ELSE 1
+        end )/(
+            SUM(CASE WHEN f.comment_id IS NULL THEN 0 ELSE 1 end) +
+            SUM(CASE WHEN m.comment_id IS NULL THEN 0 ELSE 1 end)) AS "% feed", 
+100*SUM(CASE
+            WHEN f.comment_id IS NULL THEN 0
+            ELSE 1 
+        end )/(
+    SUM(CASE 
+            WHEN f.comment_id IS NULL THEN 0 
+            ELSE 1 
+        end) +  
+    SUM(CASE WHEN m.comment_id IS NULL THEN 0 ELSE 1 end )) AS "% mentions"
+FROM ads AS a
+JOIN feed_comments AS f ON a.id = f.ad_id
+JOIN moments_comments AS m ON a.id = m.ad_id
+GROUP BY a.name, a.id
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- The schema above represents advertiser campaigns and impressions. The campaigns table specifically has a goal, which is the number that the advertiser wants to reach in total impressions. 
+-- 1. Given the table above, generate a daily report that tells us how each campaign delivered during the previous 7 days.
+-- 2. Using this data, how do we evaluate how each campaign is delivering and by what heuristic do we surface promos that need attention?
+-- #1
+select campaign_id, count(impression_id) 
+from ad_impressions
+where dt between (select date(max(date(dt))-7) as sevd from ad_impressions) 
+        and (select date(max(date(dt))-1) as ystd from ad_impressions)
+group by campaign_id
+order by campaign_id
+-- #2
+with final as(
+select c.id,goal,total_impr_b4last7, count(impression_id) total_impr_last7,count(impression_id)/7 as impr_day_last7, 
+	   count(impression_id)/datediff((select date(max(date(dt))-7) from ad_impressions ),c.sd) as impr_day_b4Last7
+from ad_impressions a
+join(select t.id, count(i.impression_id) total_impr_b4last7,
+           t.goal, t.end_dt as ed, t.start_dt as sd
+           from campaigns t
+     join ad_impressions i
+     on i.campaign_id=t.id
+     group by campaign_id
+    ) c
+on c.id=a.campaign_id
+where dt between (select date(max(date(dt))-7) from ad_impressions) 
+        and (select date(max(date(dt))-1) from ad_impressions)
+group by c.id 
+order by c.id asc
+)
+select id,goal,total_impr_b4last7 as tot_imp_b4Last7, total_impr_last7 as tot_imp_last7, 
+    impr_day_last7 as cnt_imp_last7, impr_day_b4Last7 as cnt_imp_b4Last7,
+    100*(impr_day_last7-impr_day_b4Last7)/impr_day_b4Last7 as percRateChange
+from final 
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Given the table of account statuses, compute the percentage of accounts that were closed on January 1st, 2020 (over the total number of accounts). Each account can have only one record at the daily level indicating the status at the end of the day.
+select 
+    sum(case when status = "closed" then 1 else 0 end)/count(account_id) as percentage_closed
+from account_status where date="2020-01-01"
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- A dating websites schema is represented by a table of people that like other people. The table has three columns. One column is the user_id, another column is the liker_id which is the user_id of the user doing the liking, and the last column is the date time that the like occured.
 -- Write a query to count the number of liker's likers (the users that like the likers) if the liker has one.
@@ -255,15 +343,3 @@ on u.id=r.passenger_user_id
 group by passenger_user_id
 order by r.passenger_user_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        
-        
-
-
-
-
-
-
-
-
