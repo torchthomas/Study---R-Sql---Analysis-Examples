@@ -13,9 +13,7 @@ order by TrackId
 --3.4 Retrieving Values from One Table That Do Not Exist in Another
 -- (USING DBEAVER SAMPLE DATABASE)
 	select ArtistId 
-		from Artist a
-		except 
-		select ArtistId from Album 
-		order by ArtistId 
-	
-	
+	from Artist a
+	except 
+	select ArtistId from Album 
+	order by ArtistId 
