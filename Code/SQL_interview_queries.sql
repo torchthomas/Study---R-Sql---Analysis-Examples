@@ -1,5 +1,5 @@
 -- Thomas Devine
--- (My)SQL QUERIES from a website that posted interview questions.
+-- (My)SQL QUERIES from a website that posts interview questions for top companies.
 -- /////////////////////////////////////////////////////////////////////////
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Over budget on a project is defined when the salaries, prorated to the day, exceed the budget of the project.
