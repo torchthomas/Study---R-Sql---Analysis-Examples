@@ -6,15 +6,15 @@
 -- For example, if Alice and Bob both combined income make 200K and work on a project of a budget of 50K that takes half a year, then the project is over budget given 0.5 * 200K = 100K > 50K.
 -- Write a query to select all projects that are over budget. Assume that employees only work on one project at a time.
 select title,project_forecast 
-from(select title, budget, datediff(end_date,start_date)/365 *sum(salary) as project_forecast
-      from employees e
-join employees_projects ep
-    on e.id =ep.employee_id
-join projects p
-    on ep.project_id = p.id
-group by 1,2
-) s1
-where project_forecast>budget
+    from(select title, budget, datediff(end_date,start_date)/365 *sum(salary) as project_forecast
+              from employees e
+        join employees_projects ep
+            on e.id =ep.employee_id
+        join projects p
+            on ep.project_id = p.id
+        group by 1,2
+        ) s1
+        where project_forecast>budget
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- We're given three tables representing a forum of users and their comments on posts.
 -- Write a query to get the top ten users that got the most upvotes on their comments written in 2020. 
@@ -135,14 +135,14 @@ LIMIT 1 offset 1
     -- MY NOTES: 3 tables, transactions, users, products, w/ ea. having id for respective [tablename]_id type
 select distinct y.name as users_less_than
 from(select x.id, x.name, x.quantity, x.tbill
-	from(select t.id, t.user_id, u.name, t.quantity, p.price*t.quantity as tbill
-	 from transactions t 
-	    left join users u 
-		on u.id = t.user_id
-	    left join products p
-		on p.id = t.product_id) x
-	group by x.id
-	having (x.tbill<500 or x.quantity<=2)
+     from(select t.id, t.user_id, u.name, t.quantity, p.price*t.quantity as tbill
+         from transactions t 
+            left join users u 
+                on u.id = t.user_id
+            left join products p
+                on p.id = t.product_id) x
+     group by x.id
+     having (x.tbill<500 or x.quantity<=2)
 ) y
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given three tables: user_dimension, account_dimension, and download_facts, find the average number of downloads for free vs paying customers broken out by day.
@@ -224,6 +224,21 @@ FROM ads AS a
 JOIN feed_comments AS f ON a.id = f.ad_id
 JOIN moments_comments AS m ON a.id = m.ad_id
 GROUP BY a.name, a.id
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to return only odd row numbers
+select a.* 
+from (select rownum as rn,e.* from emp e) a
+where Mod(a.rn,2)=1
+	--my notes: here is how I'd do this without rownum given since row numbers are not frequently given
+	select a.* 
+	from (
+		select b.rownum as rn,b.* 
+		from (
+			select c.*, rank() over(partition by c.id) as rownum 
+			from emp c
+		) b
+	) a 
+	where Mod(a.rn,2)=1
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- The schema above represents advertiser campaigns and impressions. The campaigns table specifically has a goal, which is the number that the advertiser wants to reach in total impressions. 
 -- 1. Given the table above, generate a daily report that tells us how each campaign delivered during the previous 7 days.
@@ -343,3 +358,21 @@ on u.id=r.passenger_user_id
 group by passenger_user_id
 order by r.passenger_user_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Display x 50% records from Employee table?
+	-- first 50%
+	select rn, e.* from emp e where rn<=(select count(*)/2 from emp)
+	-- last 50%
+	Select rn,e.* from emp e
+	minus
+	Select rn,e.* from emp e where rn<=(Select count(*)/2) from emp)
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to fetch only common records between 2 tables.
+Select * from Employee
+Intersect
+Select * from Employee1
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to return a list of employees with their respective manager's ID 
+-- my notes: manager_id is a column so we can use that 
+Select e.employee_name,m.employee name 
+from emp e,emp m 
+where e.Employee_id=m.Manager_id
