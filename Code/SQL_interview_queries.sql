@@ -1,6 +1,93 @@
 -- Thomas Devine
--- (My)SQL QUERIES from a website that posts interview questions for top companies.
+-- (My)SQL QUERIES from a website that posted interview questions.
 -- /////////////////////////////////////////////////////////////////////////
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- .................................................................
+-- We're given a table of user experiences representing each person's past work experiences and timelines. 
+-- Specifically let's say we're interested in analyzing the career paths of data scientists. Let's say that the titles we care about are bucketed into data scientist, senior data scientist, and data science manager. 
+-- We're interested in determining if a data scientist who switches jobs more often ends up getting promoted to a manager role faster than a data scientist that stays at one job for longer. 
+-- Write a query to prove or disprove this hypothesis.
+-- My notes: 
+--         My answer isn't complete enough for the data set given, but doesn't extend yet for massive data sets.
+--         To correctly implement this, I still need a final metric (the median number of jobs).
+--         Currently, my FINAL columns shown: title, user_id, njobs, nDays2Manager.
+--         What I need to do is make this a binary decision by 
+--         splitting people into TWO groups by the median number of jobs they had
+--         to become a manager, then AVG "nDays2Manager" (the ndays between
+--         the user_id's first job's start_date and the user_id's first manager role 
+--         start_date)
+--         AND voila, we got the correct answer. It's a shame I can't make 
+--         the median number that easily in mysql.
+--         For this particular dataset provided on the site, I can gimmickly
+--         get the right answer, but it just happens to work because of the 
+--         particular use of the floor() on THIS dataset's average. I commented-out
+--         that incorrect portion (associated with v2.* and following v) when I realized my (then) method
+--         wouldn't extend if the data were bigger... I know the correct idea which
+--         is honestly the most important part. I could do this in R in like 15 minutes.
+with ndays_njobs as (
+    select o.company,o.title
+        ,DATE_FORMAT(o.start_date, '%Y-%m-%d')as  start_date
+        ,DATE_FORMAT(o.end_date, '%Y-%m-%d')as  end_date
+        ,o.user_id,nJobs_title,o.is_current_role as icr
+        -- ,ifnull(datediff(o.start_date,lag(o.end_date) over(order by o.user_id, o.start_date)),0) as ndaysUnemp
+    from user_experiences o
+    join (
+        select x.user_id, x.id, x.title, count(*) nJobs_title from user_experiences x
+        group by x.user_id, x.title
+    ) ds
+    on ds.user_id=o.user_id and ds.title = o.title
+    -- group by user_id, title
+    order by o.user_id, start_date
+),
+working_lifespan as 
+(
+    -- simple approach just looking at data science role and manager date
+    select *
+    from 
+    (   select z.title ,z.user_id as uuid
+        from user_experiences z
+        group by z.user_id, z.title
+    ) s
+    join
+    (   select k.user_id 
+        -- get days between first role and current role (max starting date)
+        ,datediff(max(k.start_date),min(k.start_date)) as ndayfrom1stJtolastJ
+        from user_experiences k
+        group by k.user_id
+    )as firstDayCurrentjob 
+    on firstDayCurrentjob.user_id = s.uuid
+)
+select 
+    v.title
+    ,v.uid as user_id
+    ,sum(asdf) as njobs
+    ,v.ndayfrom1stJtolastJ as nDays2Manager
+    -- ,v2.*
+from(
+    select n.title,n.start_date
+            ,max(n.end_date) as end_date
+            ,n.user_id       as uid
+            ,n.nJobs_title as asdf
+            ,n.icr
+            -- ,sum(ndaysUnemp) as ndaysUnemp
+            ,a.ndayfrom1stJtolastJ
+        from ndays_njobs n
+        join working_lifespan as a
+            on a.uuid = n.user_id
+        group by n.user_id, title
+        order by n.icr desc
+) as v
+-- ,(
+--     select floor(avg(justmedian.sumJobs)) as median
+--         from
+--         (
+--             select sum(p.nJobs_title), p.user_id as sumJobs from ndays_njobs p
+--             group by p.user_id
+--         ) justmedian
+-- ) as v2 
+group by v.uid
+having title like "%manager"
+order by njobs
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Over budget on a project is defined when the salaries, prorated to the day, exceed the budget of the project.
 -- For example, if Alice and Bob both combined income make 200K and work on a project of a budget of 50K that takes half a year, then the project is over budget given 0.5 * 200K = 100K > 50K.
@@ -144,6 +231,7 @@ from(select x.id, x.name, x.quantity, x.tbill
      group by x.id
      having (x.tbill<500 or x.quantity<=2)
 ) y
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given three tables: user_dimension, account_dimension, and download_facts, find the average number of downloads for free vs paying customers broken out by day.
 -- Note: The account_dimension table maps users to multiple accounts where they could be a paying customer or not. Also, round average_downloads to 2 decimal places.
@@ -226,19 +314,21 @@ JOIN moments_comments AS m ON a.id = m.ad_id
 GROUP BY a.name, a.id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Write a query to return only odd row numbers
+	--my notes1: too easy
 select a.* 
 from (select rownum as rn,e.* from emp e) a
 where Mod(a.rn,2)=1
-	--my notes: here is how I'd do this without rownum given since row numbers are not frequently given
+	--my notes2: here is how I'd do this without rownum given since row numbers are not frequently given
 	select a.* 
 	from (
-		select b.rownum as rn,b.* 
-		from (
-			select c.*, rank() over(partition by c.id) as rownum 
-			from emp c
-		) b
+		select c.*, rank() over(partition by c.id) as rn 
+		from emp c
 	) a 
 	where Mod(a.rn,2)=1
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- The schema above represents advertiser campaigns and impressions. The campaigns table specifically has a goal, which is the number that the advertiser wants to reach in total impressions. 
 -- 1. Given the table above, generate a daily report that tells us how each campaign delivered during the previous 7 days.
@@ -376,3 +466,11 @@ Select * from Employee1
 Select e.employee_name,m.employee name 
 from emp e,emp m 
 where e.Employee_id=m.Manager_id
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
