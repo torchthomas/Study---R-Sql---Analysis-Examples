@@ -1,7 +1,62 @@
 -- Thomas Devine
 -- (My)SQL QUERIES from a website that posted interview questions.
 -- /////////////////////////////////////////////////////////////////////////
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ORDERING: hardest questions first (of couse), medium, easy. The harder ones usually are more like hypothesis testing 
+-- .................................................................
+-- question was asked by Reddit 
+-- We're given three tables representing a forum of users and their comments on posts.
+--      We want to figure out if users are creating multiple accounts to upvote their own comments. 
+--      1. What kind of metrics could we use to figure this out?
+--      2. Write a query that could display the percentage of users on our forum that would be acting fradulently in this manner. 
+-- MY NOTES:
+-- 		tables: users:=[id,created_at,username]  ,  comments:=(id,created_at,post_id,user_id)  ,  comment_votes:=(id,created_at,user_id,comment_id,is_upvote)
+--
+-- I look at the average age of a voter on a user’s comment. It’s kind of complicated, but it’s clear there are two cheaters: buckchristina AND amberbrown. 
+-- If you remove limit 2, then you’ll see the next avg age of voter is like 27 (still suspicious but not overly suspicious). We could go further and look at the 
+-- AVERAGE of the average age of the voter over each user so we just get the number of users on the ‘users’ table. This metric would actually be the most concise
+-- by law of large numbers, but there would have to be obvious exceptions (given this is reddit) for major r/AMA posts—that’s when famous people post so you often
+-- have thousands of new accounts posting to ask a question.
+-- 1.
+-- -we could analyze exclusive interactions btwn accts (assuming farming for just oneself)
+-- -we could just simply look at the average age of users since the post was created
+--      meaning we create a column using datediff(comments.created_at,users.created_at)
+--      so it's negative when the the comment is before the user_id's creation
+-- NOTE on 1: new accounts are going to like older posts so we can't look at a user's 
+--            average age of posts, so we can only look at the age users on a 
+--            post or datediff from post creation and user_id creation. 
+--          HOWEVER the reverse is obviously ok and sensible given who'd see a post on average
+-- 2.
+with apc as -- apc:= agePerComment 
+(
+select u.id as uid,u.created_at as ucreatedat
+    ,postid,cuid,u.username,cid,ccreatedat,cvid,cvcreatedat,cvuid,cvcomid,isupv
+from users u
+left join 
+   (select c.id as cid
+        ,c.created_at as ccreatedat   -- comment creation date (object of interest)
+        ,c.post_id as postid          -- nonobvious use
+        ,c.user_id as cuid
+    from comments c
+    ) cc
+on cc.cuid = u.id 
+left join 
+   (select cv.id as cvid              -- comment voter's id (key for grouping later)
+        ,cv.created_at as cvcreatedat -- comment voter's created date of vote
+        ,cv.user_id as cvuid,cv.comment_id as cvcomid,cv.is_upvote as isupv
+    from comment_votes cv
+    ) ccv
+on 1=1 
+    and ccv.cvuid != u.id
+    and ccv.cvcomid = cc.cid
+) 
+select x.username,  x.postid as post_id, x.cid as comment_id
+    ,avg(datediff(x.ccreatedat,x.ucreatedat)) over (partition by x.cuid) as avgAgeOfVoter
+    from apc x -- , apc y
+where x.postid IS NOT NULL
+    AND cvuid IS NOT NULL
+group by x.postid,x.cuid
+ORDER BY avgAgeOfVoter asc
+limit 2
 -- .................................................................
 -- We're given a table of user experiences representing each person's past work experiences and timelines. 
 -- Specifically let's say we're interested in analyzing the career paths of data scientists. Let's say that the titles we care about are bucketed into data scientist, senior data scientist, and data science manager. 
