@@ -2,6 +2,19 @@
 -- (My)SQL QUERIES from a website that posted interview questions.
 -- /////////////////////////////////////////////////////////////////////////
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to create a new table, named flight routes, that displays unique pairs of two locations.
+-- table: flights:= [id,source_location,destination_location] integer;string;string
+--  Example outocme:= {[destination_one,destination_two]} string;string
+-- Duplicate pairs from the flights table, such as Dallas to Seattle and Seattle to Dallas, should have one entry in the flight routes table.
+SELECT DISTINCT a.source_location as destination_one, a.destination_location as destination_two
+FROM
+    (SELECT source_location, destination_location
+        FROM flights 
+    UNION ALL
+    SELECT destination_location, source_location
+        FROM flights 
+    ) as a
+WHERE source_location <  destination_location 
 -- .................................................................
 -- Given the two tables, write a SQL query that creates a cumulative distribution of number of comments per user.
 -- Assume bin buckets class intervals of one.
@@ -23,6 +36,37 @@ from rec x
 inner join rec y 
     where y.frequency <= x.frequency 
 group BY x.frequency
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- -- Q for nerdwallet and google (this is "hard" problem but it took like 4 minutes, fastest I ever did a "hard" problem [mostly spent reading] )
+-- The schema above is for a retail online shopping company consisting of two tables, attribution and user_sessions. 
+--      -The attribution table logs a session visit for each row.
+--      -If conversion is true, then the user converted to buying on that session.
+--      -The channel column represents which advertising platform the user was attributed to for that specific session.
+--      -Lastly the  table maps many to one session visits back to one user.
+-- First touch attribution is defined as the channel to which the converted user was associated with when they first discovered the website.
+-- Q: CALCULATE THE FIRST TOUCH attribution for each user_id that converted. 
+--  MY NOTES:
+--      tables
+--          attribution:=[session_id,channel,conversion] ie 1:N; google,facebook,organic,...;0,1
+--          user_sessions:=[session_id,created_at,user_id] ie 1:N; datetime; 1:M M\in\Natural#s
+--      EXAMPLE OUTPUT (a table): {[user_id,channel],...}:=
+--                  {[432,twitter],[41,google][42,facebook],[85,organic]}
+--      APPROACH: (people kept coming back to the same site so conversion isn't the last number)
+--          this looks like we just need a rownumber =1 kind of pull after joining, grouping, and grouping 
+with jor as
+(   select conversion as conv,a.session_id as sid
+    ,a.channel,us.user_id as uid,created_at as date
+    ,row_number() over(partition by us.user_id order by created_at asc) as rn
+from user_sessions us
+join attribution a on a.session_id = us.session_id
+order by date asc,uid asc
+)
+select j.uid as user_id
+    ,j.channel
+    from jor j
+where 1=1
+    and j.conv = 1
+    and j.rn=1
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- question was asked by Reddit 
 -- We're given three tables representing a forum of users and their comments on posts.
@@ -267,18 +311,6 @@ select employee_name,name as department_name, salary, rn
         ) a
 where rn<=3
 order by name asc, salary desc
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- Write a query to create a new table, named flight routes, that displays unique pairs of two locations.
--- Example:
--- Duplicate pairs from the flights table, such as Dallas to Seattle and Seattle to Dallas, should have one entry in the flight routes table.
-SELECT DISTINCT leaving_from as destination_one, landing_in as destination_two
-FROM(SELECT leaving_from, landing_in
-    	FROM flights 
-    UNION ALL
-    SELECT landing_in, leaving_from
-    	FROM flights 
-    ) as a
-WHERE leaving_from <  landing_in 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- We're given two tables, one that represents SMS sends to phone numbers and the other represents confirmations from SMS sends. 
 	-- #1
@@ -546,4 +578,3 @@ where e.Employee_id=m.Manager_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        
