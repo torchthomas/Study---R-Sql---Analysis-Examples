@@ -4,17 +4,30 @@
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Write a query to create a new table, named flight routes, that displays unique pairs of two locations.
 -- table: flights:= [id,source_location,destination_location] integer;string;string
---  Example outocme:= {[destination_one,destination_two]} string;string
--- Duplicate pairs from the flights table, such as Dallas to Seattle and Seattle to Dallas, should have one entry in the flight routes table.
+-- MY NOTES:
+--			Example outocme:= {[destination_one,destination_two]} string;string
+-- 			Duplicate pairs from the flights table, such as Dallas to Seattle and Seattle to Dallas, should have one entry in the flight routes table.
+-- ...... AFTER REVIEW, it's clear this problem accepts various solutions with various number of dest1 and dest2 (which is troublesome to me)
+-- ...... I post another answer that I found later on stackoverflow that worked as well (it's more robust, and increases the count)
 SELECT DISTINCT a.source_location as destination_one, a.destination_location as destination_two
-FROM
-    (SELECT source_location, destination_location
-        FROM flights 
+FROM(SELECT source_location, destination_location FROM flights 
     UNION ALL
-    SELECT destination_location, source_location
-        FROM flights 
-    ) as a
+    SELECT destination_location, source_location  FROM flights 
+    )as a
 WHERE source_location <  destination_location 
+		-- -- WORKS AS WELL by Gordon Linoff: seen here: https://stackoverflow.com/questions/43646046/sql-distinct-field-combination-disregard-the-position
+		--	select source_location as destination_one, destination_location as destination_two
+		--			from flights f
+		--		where source_location < destination_location
+		--		union all
+		--		select destination_location, source_location
+		--			from flights f
+		--		where source_location < destination_location and
+		--		      not exists (select 1
+		--		        from flights f2
+		--		        where f2.destination_location = f.source_location 
+		--		        and f2.source_location = f.destination_location
+		--				)
 -- .................................................................
 -- Given the two tables, write a SQL query that creates a cumulative distribution of number of comments per user.
 -- Assume bin buckets class intervals of one.
@@ -577,4 +590,7 @@ where e.Employee_id=m.Manager_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        
+        
 
