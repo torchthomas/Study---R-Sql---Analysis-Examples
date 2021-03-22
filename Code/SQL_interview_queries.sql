@@ -1,8 +1,29 @@
 -- Thomas Devine
 -- (My)SQL QUERIES from a website that posted interview questions.
 -- /////////////////////////////////////////////////////////////////////////
--- ORDERING: hardest questions first (of couse), medium, easy. The harder ones usually are more like hypothesis testing 
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- .................................................................
+-- Given the two tables, write a SQL query that creates a cumulative distribution of number of comments per user.
+-- Assume bin buckets class intervals of one.
+-- My NOTES: (q for Amazon)
+--          Im going to count deleted comments since engagement is key
+--    TABLES:
+--      users:=[id,name,created_at]
+--      comments:=[user_id,body,created_at]
+with ncom as(
+	select u.id, count(user_id) freq from users u
+	left join comments c on c.user_id=u.id
+    group BY 1 order BY 1
+),rec as (
+    select ncom.freq as frequency, count(*) cnt from ncom
+    group by freq order by 1,2
+)
+select x.frequency, sum(y.cnt) cum_total 
+from rec x 
+inner join rec y 
+    where y.frequency <= x.frequency 
+group BY x.frequency
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- question was asked by Reddit 
 -- We're given three tables representing a forum of users and their comments on posts.
 --      We want to figure out if users are creating multiple accounts to upvote their own comments. 
@@ -143,6 +164,15 @@ from(
 group by v.uid
 having title like "%manager"
 order by njobs
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- A dating websites schema is represented by a table of people that like other people. The table has three columns. One column is the user_id, another column is the liker_id which is the user_id of the user doing the liking, and the last column is the date time that the like occured.
+-- Write a query to count the number of liker's likers (the users that like the likers) if the liker has one.
+-- MY NOTES: I had a simple and nice solution so I figured why not show it first, after all, this was ranked hard.
+select user_id as user, count(*) as count
+	from likes 
+where user_id in (select distinct liker_id from likes) group by 1
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Over budget on a project is defined when the salaries, prorated to the day, exceed the budget of the project.
 -- For example, if Alice and Bob both combined income make 200K and work on a project of a budget of 50K that takes half a year, then the project is over budget given 0.5 * 200K = 100K > 50K.
@@ -383,8 +413,6 @@ where Mod(a.rn,2)=1
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- The schema above represents advertiser campaigns and impressions. The campaigns table specifically has a goal, which is the number that the advertiser wants to reach in total impressions. 
 -- 1. Given the table above, generate a daily report that tells us how each campaign delivered during the previous 7 days.
 -- 2. Using this data, how do we evaluate how each campaign is delivering and by what heuristic do we surface promos that need attention?
@@ -422,15 +450,6 @@ from final
 select 
     sum(case when status = "closed" then 1 else 0 end)/count(account_id) as percentage_closed
 from account_status where date="2020-01-01"
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- A dating websites schema is represented by a table of people that like other people. The table has three columns. One column is the user_id, another column is the liker_id which is the user_id of the user doing the liking, and the last column is the date time that the like occured.
--- Write a query to count the number of liker's likers (the users that like the likers) if the liker has one.
-select user_id as user, count(*) as count
-	from likes 
-where user_id in 
-    (select distinct liker_id
-     	from likes
-    ) group by 1
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given a table of user logs with platform information, count the number of daily active users on each platform for the year of 2020.
 select  platform, created_at, count(distinct user_id) as daily_users
@@ -527,5 +546,4 @@ where e.Employee_id=m.Manager_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-
+        
