@@ -25,5 +25,5 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   ## Code (most interview questions relate to pulls/reads ['read' in the archetypal acronym "CRUD":=Create Read Update Delete])
   -Interview_SQL_queries.sql contains a small selection of queries I've coded as solutions to questions seen on Interview Query. 
   ## Book/Reading
-  - Data Analysis using SQL and Excel by Gordon S. Linoff (Top 0.01% sql/mysql/sql server contributor on STACKOVERFLOW, see https://stackoverflow.com/users/1144035/gordon-linoff)
+  - Data Analysis using SQL and Excel by Gordon S. Linoff (Top 0.01% sql/mysql/sql server contributor on STACKOVERFLOW, see https://stackoverflow.com/users/1144035/gordon-linoff). Since most questions you google will lead, with very high probability, lead to a comment he made it makes sense to consider his work as a primary source of learning
   - SQL cookbook by Molinaro and de Graaf (SQLite)
