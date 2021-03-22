@@ -2,6 +2,40 @@
 -- (My)SQL QUERIES from a website that posted interview questions.
 -- /////////////////////////////////////////////////////////////////////////
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Given a table of product subscriptions with a subscription start date and end date for each user, write a query that returns true or false whether
+-- or not each user has a subscription date range that overlaps with any other user.
+-- MY NOTES: (Q asked by twitch, nextdoor, pinterest)
+--      given table: subscriptions:=[user_id,start_date,end_date] int;datetime;datetime
+--      My approach works by taking advantage of the oldest ACTIVE account's start date which will create overlap=1 for like 70%+ of the accounts,
+--      then I take the ones with no overlap with the oldest ACTIVE which are accounts that are all INACTIVE. Then I do a cross join to compare the
+--      final cohort to pull out the subscriptions with no peers. Then, circling back, only look at user_ids with no peer and set overlap = 0 else overlap =1.
+with oldestacct as (
+    select min(start_date) start_date_of_oldest_account from subscriptions where end_date is null
+),
+acctsOverlappedWithOldestActiveAcct as (
+    select *, case 
+            	when start_date >= (select o.start_date_of_oldest_account from oldestacct o) then 1
+            	else 0
+        	  end as overlap 
+    from subscriptions
+),grabZeros as ( -- end_dates HAVE 0 NULLS now!!!
+    select * from acctsOverlappedWithOldestActiveAcct 
+    where overlap=0
+),noPeers as (
+    select g1.user_id from grabZeros g1
+    cross join grabZeros g2
+    where 1=1 -- grab only accounts with no overlapping subscriptions
+        and g1.user_id != g2.user_id 
+        and g1.start_date not between g2.start_date and g2.end_date
+) -- next, circle back around and just demarcate user_ids with no overlapping subscriptions 
+select a.user_id, 
+    case 
+        when a.user_id in (select noPeers.user_id from noPeers) then 0
+        else 1
+    end as overlap
+from acctsOverlappedWithOldestActiveAcct a 
+where overlap=1 -- pull out the user_ids with overlaps
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Write a query to create a new table, named flight routes, that displays unique pairs of two locations.
 -- table: flights:= [id,source_location,destination_location] integer;string;string
 -- MY NOTES:
@@ -65,7 +99,7 @@ group BY x.frequency
 --      EXAMPLE OUTPUT (a table): {[user_id,channel],...}:=
 --                  {[432,twitter],[41,google][42,facebook],[85,organic]}
 --      APPROACH: (people kept coming back to the same site so conversion isn't the last number)
---          this looks like we just need a rownumber =1 kind of pull after joining, grouping, and ordering 
+--          this looks like we just need a rownumber =1 kind of pull after joining, grouping, and grouping 
 with jor as
 (   select conversion as conv,a.session_id as sid
     ,a.channel,us.user_id as uid,created_at as date
@@ -229,7 +263,21 @@ select user_id as user, count(*) as count
 	from likes 
 where user_id in (select distinct liker_id from likes) group by 1
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Given a users table, write a query to get the cumulative number of new users added by day, with the total reset every month. 
+-- MY NOTES: (q by Amazon)
+--  table: users:=[id,name,created_at] int;string;datetime
+--  simple count then sum over partition by and order by. The trick is to partition by year and monthotherwise the counts are messed up
+with cnt as
+(
+    select date(u.created_at) as created_at
+            ,count(u.id) as md_cnt from users u
+    group by u.created_at
+)
+select c.created_at as date
+    ,sum(c.md_cnt) over(partition by year(c.created_at),month(c.created_at) 
+                        order by c.created_at asc
+                    ) as  monthly_cumulative
+from cnt c
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Over budget on a project is defined when the salaries, prorated to the day, exceed the budget of the project.
 -- For example, if Alice and Bob both combined income make 200K and work on a project of a budget of 50K that takes half a year, then the project is over budget given 0.5 * 200K = 100K > 50K.
@@ -586,11 +634,3 @@ Select e.employee_name,m.employee name
 from emp e,emp m 
 where e.Employee_id=m.Manager_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        
-        
-
