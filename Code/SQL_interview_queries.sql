@@ -65,7 +65,7 @@ group BY x.frequency
 --      EXAMPLE OUTPUT (a table): {[user_id,channel],...}:=
 --                  {[432,twitter],[41,google][42,facebook],[85,organic]}
 --      APPROACH: (people kept coming back to the same site so conversion isn't the last number)
---          this looks like we just need a rownumber =1 kind of pull after joining, grouping, and grouping 
+--          this looks like we just need a rownumber =1 kind of pull after joining, grouping, and ordering 
 with jor as
 (   select conversion as conv,a.session_id as sid
     ,a.channel,us.user_id as uid,created_at as date
