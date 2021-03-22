@@ -18,7 +18,7 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   ## Docker (in R)
   - Discussion of how to use Docker with R (esp. emphasis on the reading list at the bottom): https://colinfay.me/docker-r-reproducibility/
   
-# SQL related
+# SQL related (most interview questions relate to pulls/reads ('read' in the archetypal acronym "CRUD":=Create Read Update Delete))
   -Interview_SQL_queries.sql contains a small selection of queries I've coded as solutions to questions seen on Interview Query. 
   # Book/Reading
   - SQL cookbook by Molinaro and de Graaf
