@@ -14,7 +14,7 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   - Rfast
   - RcppEigen; for fast regressions/glm
   - lme4, nlme; for linear and nonlinear mixed models (see discussion of meanings https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
-  - 
+  - rshiny (EXTREMELY USEFUL tips seen here: https://deanattali.com/blog/advanced-shiny-tips/)
   ## Docker (in R)
   - Discussion of how to use Docker with R (esp. emphasis on the reading list at the bottom): https://colinfay.me/docker-r-reproducibility/
   
