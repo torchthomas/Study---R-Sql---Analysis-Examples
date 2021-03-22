@@ -18,10 +18,12 @@ This might seem like a weird way to keep my learning public, but it's a fun way 
   ## Docker (in R)
   - Discussion of how to use Docker with R (esp. emphasis on the reading list at the bottom): https://colinfay.me/docker-r-reproducibility/
   
-# SQL related (most interview questions relate to pulls/reads ('read' in the archetypal acronym "CRUD":=Create Read Update Delete))
+# SQL related 
+  # Code (most interview questions relate to pulls/reads ['read' in the archetypal acronym "CRUD":=Create Read Update Delete])
   -Interview_SQL_queries.sql contains a small selection of queries I've coded as solutions to questions seen on Interview Query. 
   # Book/Reading
-  - SQL cookbook by Molinaro and de Graaf
+  - Data Analysis using SQL and Excel by Gordon S. Linoff (Top 0.01% sql/mysql/sql server contributor on STACKOVERFLOW, see https://stackoverflow.com/users/1144035/gordon-linoff)
+  - SQL cookbook by Molinaro and de Graaf (SQLite)
 
 # Books
   - An Introduction to Statistical Learning with Applications in R by Gareth et al 2014; I follow this book the code portion of this repo
