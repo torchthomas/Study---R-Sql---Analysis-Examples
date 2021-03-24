@@ -1,6 +1,5 @@
 -- Thomas Devine
 -- (My)SQL QUERIES from a website that posted interview questions.
--- /////////////////////////////////////////////////////////////////////////
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given a table of product subscriptions with a subscription start date and end date for each user, write a query that returns true or false whether
 -- or not each user has a subscription date range that overlaps with any other user.
@@ -25,7 +24,7 @@ acctsOverlappedWithOldestActiveAcct as (
     select g1.user_id from grabZeros g1
     cross join grabZeros g2
     where 1=1 -- grab only accounts with no overlapping subscriptions
-        and g1.user_id != g2.user_id 
+        and g1.user_id <> g2.user_id 
         and g1.start_date not between g2.start_date and g2.end_date
 ) -- next, circle back around and just demarcate user_ids with no overlapping subscriptions 
 select a.user_id, 
@@ -39,8 +38,8 @@ where overlap=1 -- pull out the user_ids with overlaps
 -- Write a query to create a new table, named flight routes, that displays unique pairs of two locations.
 -- table: flights:= [id,source_location,destination_location] integer;string;string
 -- MY NOTES:
---			Example outocme:= {[destination_one,destination_two]} string;string
--- 			Duplicate pairs from the flights table, such as Dallas to Seattle and Seattle to Dallas, should have one entry in the flight routes table.
+--	Example outocme:= {[destination_one,destination_two]} string;string
+-- 	Duplicate pairs from the flights table, such as Dallas to Seattle and Seattle to Dallas, should have one entry in the flight routes table.
 -- ...... AFTER REVIEW, it's clear this problem accepts various solutions with various number of dest1 and dest2 (which is troublesome to me)
 -- ...... I post another answer that I found later on stackoverflow that worked as well (it's more robust, and increases the count)
 SELECT DISTINCT a.source_location as destination_one, a.destination_location as destination_two
@@ -49,19 +48,13 @@ FROM(SELECT source_location, destination_location FROM flights
     SELECT destination_location, source_location  FROM flights 
     )as a
 WHERE source_location <  destination_location 
-		-- -- WORKS AS WELL by Gordon Linoff: seen here: https://stackoverflow.com/questions/43646046/sql-distinct-field-combination-disregard-the-position
-		--	select source_location as destination_one, destination_location as destination_two
-		--			from flights f
-		--		where source_location < destination_location
-		--		union all
-		--		select destination_location, source_location
-		--			from flights f
-		--		where source_location < destination_location and
-		--		      not exists (select 1
-		--		        from flights f2
-		--		        where f2.destination_location = f.source_location 
-		--		        and f2.source_location = f.destination_location
-		--				)
+	-- -- WORKS AS WELL by Gordon Linoff: seen here: https://stackoverflow.com/questions/43646046/sql-distinct-field-combination-disregard-the-position
+	--	select source_location as destination_one, destination_location as destination_two from flights f
+	--		where source_location < destination_location
+	--		union all
+	--		select destination_location, source_location from flights f
+	--		where source_location < destination_location and 
+	--		      not exists (select 1 from flights f2 where f2.destination_location = f.source_location and f2.source_location = f.destination_location)
 -- .................................................................
 -- Given the two tables, write a SQL query that creates a cumulative distribution of number of comments per user.
 -- Assume bin buckets class intervals of one.
@@ -158,7 +151,7 @@ left join
     from comment_votes cv
     ) ccv
 on 1=1 
-    and ccv.cvuid != u.id
+    and ccv.cvuid <> u.id
     and ccv.cvcomid = cc.cid
 ) 
 select x.username,  x.postid as post_id, x.cid as comment_id
@@ -176,21 +169,14 @@ limit 2
 -- Write a query to prove or disprove this hypothesis.
 -- My notes: 
 --         My answer isn't complete enough for the data set given, but doesn't extend yet for massive data sets.
---         To correctly implement this, I still need a final metric (the median number of jobs).
---         Currently, my FINAL columns shown: title, user_id, njobs, nDays2Manager.
---         What I need to do is make this a binary decision by 
---         splitting people into TWO groups by the median number of jobs they had
---         to become a manager, then AVG "nDays2Manager" (the ndays between
---         the user_id's first job's start_date and the user_id's first manager role 
+--         To correctly implement this, I still need a final metric (the median number of jobs). Currently, my FINAL columns shown: title, user_id, njobs, nDays2Manager.
+--         What I need to do is make this a binary decision by splitting people into TWO groups by the median number of jobs they had
+--         to become a manager, then AVG "nDays2Manager" (the ndays between the user_id's first job's start_date and the user_id's first manager role 
 --         start_date)
---         AND voila, we got the correct answer. It's a shame I can't make 
---         the median number that easily in mysql.
---         For this particular dataset provided on the site, I can gimmickly
---         get the right answer, but it just happens to work because of the 
---         particular use of the floor() on THIS dataset's average. I commented-out
---         that incorrect portion (associated with v2.* and following v) when I realized my (then) method
---         wouldn't extend if the data were bigger... I know the correct idea which
---         is honestly the most important part. I could do this in R in like 15 minutes.
+--         AND voila, we got the correct answer. It's a shame I can't make the median number that easily in mysql.
+--         For this particular dataset provided on the site, I can gimmickly get the right answer, but it just happens to work because of the 
+--         particular use of the floor() on THIS dataset's average. I commented-out that incorrect portion (associated with v2.* and following v) when I realized my (then) method
+--         wouldn't extend if the data were bigger... I know the correct idea which is honestly the most important part. I could do this in R in like 15 minutes.
 with ndays_njobs as (
     select o.company,o.title
         ,DATE_FORMAT(o.start_date, '%Y-%m-%d')as  start_date
@@ -207,8 +193,7 @@ with ndays_njobs as (
     order by o.user_id, start_date
 ),
 working_lifespan as 
-(
-    -- simple approach just looking at data science role and manager date
+(	-- simple approach just looking at data science role and manager date
     select *
     from 
     (   select z.title ,z.user_id as uuid
@@ -255,6 +240,64 @@ from(
 group by v.uid
 having title like "%manager"
 order by njobs
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ -- In the table above, column action represents either ('post_enter', 'post_submit', 'post_canceled') for when a user starts a post (enter), ends up canceling it (cancel), or ends up posting it (submit).
+ -- Write a query to get the post success rate for each day in the month of January 2020.
+ -- select e.id,e.user_id,e.action,e.created_at from events e order by user_id
+ -- MY NOTES; TABLE:= events= [id,useR_id,created_at,action,url,platform]; int,int,datetime,string,string,string
+ --      hardest this is filling the missing date/dates interval 
+with enters as 
+(   select e.user_id
+        ,e.action,date(e.created_at) as dt
+        ,count(*) as totalenters
+    from events e where e.action="post_enter"
+    group by date(e.created_at),e.user_id
+    order by user_id asc
+),
+submits as
+(   select e.user_id
+         , e.action
+         , date(e.created_at) as dt
+         , count(*) as totalsubmits
+    from events e where e.action="post_submit"
+    group by e.created_at, e.user_id
+),
+daterange as (
+    select a.Date as datee
+    from (
+        select date("2020-02-01")- INTERVAL (a.a + (10 * b.a) + (100 * c.a) + (1000 * d.a) ) DAY as Date
+        from (select 0 as a union all select 1 union all select 2 union all select 3 union all select 4 union all select 5 union all select 6 union all select 7 union all select 8 union all select 9) as a
+        cross join (select 0 as a union all select 1 union all select 2 union all select 3 union all select 4 union all select 5 union all select 6 union all select 7 union all select 8 union all select 9) as b
+        cross join (select 0 as a union all select 1 union all select 2 union all select 3 union all select 4 union all select 5 union all select 6 union all select 7 union all select 8 union all select 9) as c
+        cross join (select 0 as a union all select 1 union all select 2 union all select 3 union all select 4 union all select 5 union all select 6 union all select 7 union all select 8 union all select 9) as d
+    ) a
+    where a.Date between '2020-01-01' and '2020-01-31' 
+),
+joined as 
+ (   select e.dt,e.totalenters, s.totalsubmits, avg(s.totalsubmits/e.totalenters) as post_success_rate
+    from enters e
+    join submits s on s.dt=e.dt and e.user_id=s.user_id
+    group by e.dt
+)
+select date_format(d.datee,"%Y-%m-%d") dt, ifnull(post_success_rate,0) post_success_rate from daterange d 
+left join joined j
+on d.datee=j.dt
+order by dt asc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to return pairs of projects where the end date of one project matches the start date of another project. 
+-- MY NOTES:
+--  		table: [id,title,start_date,end_date,budget]; integer,string,datetime,datetime,float
+--  		output: [project_title_end,project_title_start,date]; string,string,datetime
+-- 	  Given multiple DIFFERENT projects could end and start on the same day AND some projects could start and stop on the SAME day,
+--   this is going to match projects with different ids (or titles, but titles aren't guaranteed  to be unique).
+    select p.title as project_title_end,p2.title as project_title_start,date(p.end_date) as date
+    from projects p
+    cross join projects p2
+    where 1=1 
+        and date(p.end_date)<date(p2.start_date) 
+        and date(p.end_date)>date(p2.start_date) 
+        and p.id <> p2.id -- exclude projects which start and stop on the same day 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- A dating websites schema is represented by a table of people that like other people. The table has three columns. One column is the user_id, another column is the liker_id which is the user_id of the user doing the liking, and the last column is the date time that the like occured.
 -- Write a query to count the number of liker's likers (the users that like the likers) if the liker has one.
@@ -293,6 +336,22 @@ select title,project_forecast
         ) s1
         where project_forecast>budget
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- The events table that tracks every time a user performs a certain action (like, post_enter, etc.) on a platform.
+-- Write a query to determine the top 5 actions performed during the week of Thanksgiving (11/22 - 11/28, 2020), and rank them based on number of times performed.
+-- The output should include the action performed and their rank in ascending order. If two actions performed equally, they should have the same rank. 
+-- MY NOTES:
+--   top 5 is a simple limit at the end
+--   date filter is date between "2020-11-22" and "2020-11-28"
+--   aggregation is counting over action grouping by action 
+select e2.action, rank () over(order by e2.cnt desc)  as ranks
+from(
+    select user_id as var, action, created_at, count(e.user_id) as cnt
+        from events e
+    where created_at between "2020-11-22" and "2020-11-28"
+    group by action
+) e2
+limit 5
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- We're given three tables representing a forum of users and their comments on posts.
 -- Write a query to get the top ten users that got the most upvotes on their comments written in 2020. 
 -- Note: Do not count deleted comments and upvotes by users on their own comments.
@@ -302,7 +361,7 @@ select title,project_forecast
 	        -- join on users.id=comments.user_id
 	        -- join on comments.id = comment_votes.comment_id
 	            -- this data should have post_id and counts of votes on ACTIVE posts
-	        -- can filter year, is_deleted, c.user_id != cv.user_id, and vote positive (unecessary control but it's ok)
+	        -- can filter year, is_deleted, c.user_id <> cv.user_id, and vote positive (unecessary control but it's ok)
 select u.id, u.username, count(cv.id) as upvotes
 from users u
 left join comments c
@@ -311,7 +370,7 @@ left join comment_votes cv
 	on c.id = cv.comment_id
 where c.is_deleted = 0          -- exclude deleted comments
     and year(c.created_at)=2020 -- only comments created in 2020 (would be a bit more fun to get upvotes only from 2020)
-    and cv.user_id != c.user_id -- no self-votes
+    and cv.user_id <> c.user_id -- no self-votes
 group by 1						-- grouping by the comment-maker 
 order by 3						-- ordering by most votes
 limit 10
@@ -334,7 +393,6 @@ limit 5
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- We're given a table of bank transactions with three columns, user_id, a deposit or withdrawal value (determined if the value is positive or negative), and created_at time for each transaction.
 -- Write a query to get the total three day rolling average for deposits by day.
-
 SELECT distinct date(a.created_at) as dt,
     --   a.transaction_value,
       Round( ( SELECT SUM(b.transaction_value) / COUNT(b.transaction_value)
@@ -441,6 +499,31 @@ FROM bank_transactions  t1) t
 where t.rn=1
 order by created_at asc
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Given the tables above, select the top 3 departments with at least ten employees and rank them according to the percentage of their employees making over 100K in salary.
+-- MY NOTES (two tables, employees and depatments, easy problem)
+--       count rank departments by employee ids
+with df as 
+(   select d.name 
+        ,case 
+            when e.salary > 100000 then 1
+            else 0
+        end as salOver100k
+      , count(e.id) over(partition by department_id) nEmps
+      ,e.*
+    from employees e
+    left join departments d
+    on d.id=e.department_id
+)
+select sum(df.salOver100k)/df.nEmps as percentage_over_100K
+        ,df.name as department_name
+        ,df.nEmps as number_of_employees
+from df
+group by name
+having nEmps>9
+limit 3
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 -- Write a query to identify customers who placed more than three transactions each in both 2019 and 2020.
 SELECT 
 temp.name AS customer_name
@@ -467,6 +550,18 @@ select comments_count, count(*) AS frequency
     from h
 group by comments_count 
 order by comments_count asc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- You're given a table that represents search results from searches on Facebook. The `query` column is the search term, `position` column represents each position the search result came in, and the rating column represents the human rating of the result from 1 to 5 where 5 is high relevance and 1 is low relevance.
+-- Write a query to get the percentage of search queries where all of the ratings for the query results are less than a rating of 3. Please round your answer to two decimal points.
+-- MY NOTES: search_results:= [query,result_id,position,rating] varchat,int,int,int
+--      output:= [percentage_less_than_3]; float
+select round(1 - (
+		    select count(distinct s.query) as high_quality 
+		    from search_results s
+		    where s.rating >= 3
+		) /(select count(distinct s2.query) 
+		    from search_results s2)
+		,2) as percentage_less_than_3
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- An ads table holds an ID and the advertisement name like "Labor day shirts sale". The feed_comments table holds the comments on ads by different users that occurs in the regular feed. The moments_comments table holds the comments on ads by different users in the moments section.
 -- Write a query to get the percentage of comments, by ad, that occurs in the feed versus mentions sections of the app.
@@ -543,6 +638,42 @@ from final
 select 
     sum(case when status = "closed" then 1 else 0 end)/count(account_id) as percentage_closed
 from account_status where date="2020-01-01"
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- We're given two tables. One is named `projects` and the other maps employees to the projects they're working on.
+-- Write a query to get the top five most expensive projects by budget to employee count ratio.
+-- Note: Exclude projects with 0 employees. Assume each employee works on only one project.
+select title,budget/ep.cnt as budget_per_employee from projects
+join(select e.project_id,count(e.employee_id) as cnt from employees_projects e
+        group by e.project_id 
+    ) ep on projects.id = ep.project_id
+order by projects.budget/ep.cnt desc limit 5
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- We're given a table of product purchases. Each row in the table represents an individual user product purchase.
+-- Write a query to get the number of customers that were upsold by purchasing additional products.
+-- Note that if the customer purchased two things on the same day that does not count as an upsell as they were purchased within a similar timeframe.
+-- MY NOTES:
+--  table: transactions:= [id,user_id,created_at,product_id,quantity] int,int,datetime,int,int
+--      could count noncontemporaneous dates while grouping by user_id, but this was the first I thought of 
+select count(distinct t.user_id) as num_of_upsold_customers
+from 
+(   select t2.id,t2.user_id,t2.created_at
+        ,dense_rank() over(partition by t2.user_id order by t2.created_at asc) as ranks
+    from transactions t2
+) t
+where t.ranks >1
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Let’s say we have a table representing a company payroll schema.
+-- Due to an ETL error, the employees table instead of updating the salaries every year when doing compensation adjustments, did an insert instead. The head of HR still needs the current salary of each employee.
+-- Write a query to get the current salary for each employee.
+-- Assume no duplicate combination of first and last names. (I.E. No two John Smiths)
+-- MY NOTES: table: employees:= [id,first_name,last_name,salary,department_id]
+--      insert issue means we should have more people
+select em.first_name,em.last_name,em.salary from employees em
+join(   select e1.first_name, e1.last_name, max(e1.id)  as maxid 
+    from employees e1
+    group by 1,2
+    ) e
+on maxid = em.id and e.first_name=em.first_name and e.last_name = em.last_name 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given a table of user logs with platform information, count the number of daily active users on each platform for the year of 2020.
 select  platform, created_at, count(distinct user_id) as daily_users
