@@ -322,6 +322,11 @@ select c.created_at as date
                     ) as  monthly_cumulative
 from cnt c
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Let's say we have a table with an id and name field. The table holds over 100 million rows and we want to sample a random row in the table without throttling the database.
+-- Write a query to randomly sample a row from this table.
+select b.* from big_table b
+order by RAND() limit 1;
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Over budget on a project is defined when the salaries, prorated to the day, exceed the budget of the project.
 -- For example, if Alice and Bob both combined income make 200K and work on a project of a budget of 50K that takes half a year, then the project is over budget given 0.5 * 200K = 100K > 50K.
 -- Write a query to select all projects that are over budget. Assume that employees only work on one project at a time.
@@ -402,6 +407,32 @@ SELECT distinct date(a.created_at) as dt,
               ), 2 ) AS 'rolling_three_day'
      FROM bank_transactions AS a
      ORDER BY dt asc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Given a table of transactions and products, write a query to return the product id and average product price 
+-- for that id. Only return the products where the average product price is greater than the average price of all transactions.
+-- My notes: tables: products:=[id,name,price]int,string,float; 
+--                  transactions:=[id,user_id,created_at,product_id,quantity] int,int,datetime,int,int
+--      there was a mistake in the solution where the solution demanded avg( p.price) over() as avg_price for the avg transactions price,
+--      which is wrong since whoever wrote it forgot quantity, which I have
+--      the question doesn't ask for this filter to be for transaction ids which makes more sense how it's worded now
+--      but I comment out a group by product_id filter since how the solution is given one can infer this is neater since there are no duplicates
+with join_TandP_and_calculate_cost as (
+    select t.product_id
+        ,avg(p.price) over(partition by t.product_id) as avg_product_price  -- get avg price t
+        ,avg(t.quantity * p.price) over() as avg_price  -- get avg cost of all t.id
+    from transactions as t
+    inner join products as p
+    on p.id=t.product_id
+)
+select j.product_id
+    ,round(j.avg_product_price,2) as product_avg_price
+    ,round(j.avg_price,2) avg_price
+    -- ,j.name
+from join_TandP_and_calculate_cost j
+where j.avg_product_price > avg_price
+-- group by j.product_id
+
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --Let's say we have a table representing vacation bookings.
 --How would you make an aggregate table represented below called `listing_bookings` with values grouped by the `listing_id` and columns that represented the total number of bookings in the last 90 days, 365 days, and all time? 
@@ -720,7 +751,7 @@ where action = "like"
 	    -- dog	    1000	1	    2	    picture of hotdog
 	    -- dog	    998 	2	    4  	    dog walking
 	    -- dog	    342 	3	    1	    zebra
-	    -- cat     123 	1	    4	    picture of cat
+	    -- cat      123 	1	    4	    picture of cat
 	    -- cat	    435 	2	    2	    cat memes
 	    -- cat	    545 	3	    1	    pizza shops
 	--...we would rank 'cat' as having a better search result ranking precision than 'dog' based on the correct sorting by rating.
