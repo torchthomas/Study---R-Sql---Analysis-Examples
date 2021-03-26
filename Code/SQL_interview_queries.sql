@@ -1,5 +1,5 @@
 -- Thomas Devine
--- (My)SQL QUERIES from a website that posted interview questions.
+-- (My)SQL QUERIES from a website that posts interview questions.
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given a table of product subscriptions with a subscription start date and end date for each user, write a query that returns true or false whether
 -- or not each user has a subscription date range that overlaps with any other user.
