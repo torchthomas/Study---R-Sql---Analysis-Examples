@@ -241,7 +241,6 @@ group by v.uid
 having title like "%manager"
 order by njobs
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
  -- In the table above, column action represents either ('post_enter', 'post_submit', 'post_canceled') for when a user starts a post (enter), ends up canceling it (cancel), or ends up posting it (submit).
  -- Write a query to get the post success rate for each day in the month of January 2020.
  -- select e.id,e.user_id,e.action,e.created_at from events e order by user_id
@@ -357,6 +356,69 @@ from(
 ) e2
 limit 5
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- 1. Design a database for a stand-alone fast food restaurant. 
+-- 2. Based on the above database schema, write a SQL query to find the top three highest revenue items sold yesterday. 
+-- 3. Write a SQL query using the database schema to find the percentage of customers that order drinks with their meal. 
+-- ans: 1
+	-- what's missing is a the link dissecting order into the order_content table, but that link is crucial since it lists what's purchased.
+	CREATE TABLE transactions (
+	    order_id int                -- will be distinct in this table
+	    , created_at datetime        -- creates a datetime stamp
+	    , payment_option string      -- cash, debit, credit
+	    , transaction_status string  -- complete, cancelled, voided
+	    , ticket_price float         -- transaction price
+	);
+	-- next we want a table to track what each list ordered
+	CREATE TABLE order_content ( 
+	    order_id int          -- will NOT be distinct since we show items in orders,
+	    , meal string         -- chicken fajita, dr pepper, 1/3 lb burger, fries
+	    , drink_size string   -- large, medium, small
+	    , food_group string   -- combo, drink, meal  (combo=drink+meal)
+	    , price float
+	);
+-- ans: 2
+	select t.order_id, o.price, o.meal  , o.drink , o.food_group  
+	from transactions t	join order_content o on o.order_id = t.order_id
+	where t.created_at = date(subdate(curdate(), 1)) -- yesterday but without time in the timestamp
+	order by o.price desc limit 3
+-- ans: 3
+	-- we assume that pricing of combos is cheaper and that all that order drinks and meal will have it down as a combo
+	with joined as (
+	    select t.order_id , o.price, o.items_sold, o.item_size, o.item_group  from transactions t
+	    join order_content o on o.order_id = t.order_id    
+	),
+	cnt_combos as (
+	    select count(distinct order_id) as nCombo_orders from joined where food_group = 'combo'
+	) 
+	select 100*(select cnt_combos.nCombo_orders from cnt_combos)/(select count(distinct order_id) from order_content)
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Let's say we want to build a naive recommender. We're given two tables, one table called `friends` with a user_id and friend_id columns representing each user's friends, and another table called `page_likes` with a user_id and a page_id representing the page each user liked.
+-- Write an SQL query to create a metric to recommend pages for each user based on recommendations from their friends liked pages. 
+-- Note: It shouldn't recommend pages that the user already likes.
+-- MY NOTES: tables, friends:=[user_id,friend_id] int,int; page_likes:=[user_id,page_id] int,int
+--      1. first subquery gets all the pages 'your' friends like (including the ones 'you' like)
+--      2. second subquery joins the first subquery and excludes the pages 'you' like 
+--      3. select statement counts rows of the grouping by your id and friends_page_id (i.e., user_id, 
+with pages_of_friends as 
+(   select f.user_id , f.friend_id,p.page_id as friends_page_id
+    from page_likes p
+    join friends f on f.friend_id=p.user_id
+    order by 1 asc
+),
+joined as 
+(   select pf.*  -- essentially, just removing pages shared
+    from pages_of_friends pf
+    join page_likes pm on 1=1
+        and pm.user_id = pf.user_id
+        and pm.page_id <> pf.friends_page_id
+    group by 1,2,3
+    order by user_id asc,friends_page_id asc
+) select j.user_id, j.friends_page_id as page_id
+      ,count(*) as num_friend_likes
+  from joined j
+  group by 1,2
+  order by 1 asc, 3 desc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- We're given three tables representing a forum of users and their comments on posts.
 -- Write a query to get the top ten users that got the most upvotes on their comments written in 2020. 
 -- Note: Do not count deleted comments and upvotes by users on their own comments.
@@ -431,8 +493,6 @@ select j.product_id
 from join_TandP_and_calculate_cost j
 where j.avg_product_price > avg_price
 -- group by j.product_id
-
-
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --Let's say we have a table representing vacation bookings.
 --How would you make an aggregate table represented below called `listing_bookings` with values grouped by the `listing_id` and columns that represented the total number of bookings in the last 90 days, 365 days, and all time? 
@@ -498,7 +558,6 @@ from(select x.id, x.name, x.quantity, x.tbill
      group by x.id
      having (x.tbill<500 or x.quantity<=2)
 ) y
-
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given three tables: user_dimension, account_dimension, and download_facts, find the average number of downloads for free vs paying customers broken out by day.
 -- Note: The account_dimension table maps users to multiple accounts where they could be a paying customer or not. Also, round average_downloads to 2 decimal places.
@@ -553,8 +612,6 @@ group by name
 having nEmps>9
 limit 3
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 -- Write a query to identify customers who placed more than three transactions each in both 2019 and 2020.
 SELECT 
 temp.name AS customer_name
