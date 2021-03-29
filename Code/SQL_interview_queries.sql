@@ -494,6 +494,26 @@ from join_TandP_and_calculate_cost j
 where j.avg_product_price > avg_price
 -- group by j.product_id
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- We have a table that represents the total number of messages sent between two users by date on messenger.
+--      select * from messages 
+-- 1. What are some insights that could be derived from this table?
+-- 2. What do you think the distribution of the number of conversations created by each user per day looks like?
+-- 3. Write a query to get the distribution of the number of conversations created by each user by day in the year 2020.
+-- MY ANSWERS: (table: messages:= [id,date,user1,user2,msg_count]; int,datetime,int,int,int)
+-- 1. We could find frequent relationships people tend to, what seasonality there is in messaging behavior based off of user information (shared school, holidays, bdays, etc.)
+-- 2. There is is likely some time dependency (early morning, lunch, after work to the end of the night). Further, 
+--    like in (1), seasonality can be inferred from dates, shared interest, or other personal info.
+-- 3.
+with t as (
+    select *,count(id) as nconvs
+        from messages 
+    group by date,user1
+    having year(date) = 2020
+    order by user1 asc, date asc
+)
+select nconvs num_conversations, count(*) frequency from t
+group by nconvs
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --Let's say we have a table representing vacation bookings.
 --How would you make an aggregate table represented below called `listing_bookings` with values grouped by the `listing_id` and columns that represented the total number of bookings in the last 90 days, 365 days, and all time? 
 select listing_id, 
