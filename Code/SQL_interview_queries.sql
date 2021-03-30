@@ -15,7 +15,7 @@ acctsOverlappedWithOldestActiveAcct as (
     select *, case 
             	when start_date >= (select o.start_date_of_oldest_account from oldestacct o) then 1
             	else 0
-        	  end as overlap 
+	      end as overlap 
     from subscriptions
 ),grabZeros as ( -- end_dates HAVE 0 NULLS now!!!
     select * from acctsOverlappedWithOldestActiveAcct 
