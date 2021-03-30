@@ -556,6 +556,14 @@ order by name asc, salary desc
 		AND c.date = s.ds
 	WHERE type = 'confirmation' GROUP BY date;
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Write a query to identify managers with the biggest team size
+-- MY notes: table: employees:=[id, manager_id,firstname,lastname,salary,departmentid] int,,int,string,string,int,int
+--                  managers :=[id,name,team]; int,string,string
+select m.name as manager ,count(e.id) as team_size
+    from employees e 
+join managers m on m.id=e.manager_id
+group by m.name order by count(e.id) desc
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --Write a SQL query to select the 2nd highest salary in the engineering department. If more than one person shares the highest salary, the query should select the next highest salary.
 SELECT salary
 	FROM employees
