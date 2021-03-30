@@ -15,7 +15,7 @@ acctsOverlappedWithOldestActiveAcct as (
     select *, case 
             	when start_date >= (select o.start_date_of_oldest_account from oldestacct o) then 1
             	else 0
-	      end as overlap 
+        	  end as overlap 
     from subscriptions
 ),grabZeros as ( -- end_dates HAVE 0 NULLS now!!!
     select * from acctsOverlappedWithOldestActiveAcct 
@@ -555,6 +555,17 @@ order by name asc, salary desc
 		ON s.phone_number = c.phone_number 
 		AND c.date = s.ds
 	WHERE type = 'confirmation' GROUP BY date;
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- We're given two tables. One is named `projects` and the other maps employees to the projects they're working on. 
+-- We want to select the five most expensive projects by budget to employee count ratio. But let's say that we've found a bug where there exists duplicate rows in the `employees_projects` table.
+-- Write a query to account for the error and select the top five most expensive projects by budget to employee count ratio.
+-- MY NOTES: tables: projects:=[id,title,start_date,end_date,budget]; int,varchar,date,date,int
+--           employees_projects:=[project_id,employee_id]; int,int
+--       the group by in the subquery is the "trick", otherwise this is easy
+select title,p.budget/count(e.employee_id) budget_per_employee from projects p
+join (select * from employees_projects group by 1,2) e
+on e.project_id=p.id
+group by e.project_id order by p.budget/count(e.employee_id) desc limit 5
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Write a query to identify managers with the biggest team size
 -- MY notes: table: employees:=[id, manager_id,firstname,lastname,salary,departmentid] int,,int,string,string,int,int
