@@ -1,6 +1,35 @@
 -- Thomas Devine
 -- (My)SQL QUERIES from a website that posts interview questions.
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- We're given a table called employers that consists of a user_id, year, and employer EIN label. Users can have multiple employers dictated by the different EIN labels.
+-- Write a query to add a flag to each user if they've added a new employer in the current year.
+-- My notes: table: 
+--		employers:=[user_id,year,employer_ein]; int,string,string, e.g., [(235234,2019, A),(235234,2019, B), (235234,2019, C),(235234,2020,D),(235234,2020,A),(935200,2019,A),(935200,2020,A)]
+--      where the answer is of the form:
+--			user_id year	new_ein_flag
+--			235234	2020	1
+-- 		 	935200	2020	0
+-- 		My answer is robust to many different years and I even submitted this to correct the website's incorrect solution given it only uses 2 years which simplifies the answer. 
+with einconcat as (
+  select *, GROUP_CONCAT(employer_ein SEPARATOR '') grp
+  from employers
+  group by 1,2
+),
+joined as (
+  select x.user_id, x.year, e.employer_ein, grp
+  	from einconcat x 
+  join employers e on x.user_id = e.user_id and x.year=e.year
+),
+lagg as (
+  select *,lag(grp) OVER (partition by user_id order by user_id asc, year asc) as lagg1
+  	from joined 
+)
+select user_id, year,-- employer_ein as ein, lagg1, grp,
+  case when locate(employer_ein, lagg1)=0 then 1 
+  else 0 end new_ein_flag
+from lagg group by 1,2 having year ='2020'
+order by 1,2
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- Given a table of product subscriptions with a subscription start date and end date for each user, write a query that returns true or false whether
 -- or not each user has a subscription date range that overlaps with any other user.
 -- MY NOTES: (Q asked by twitch, nextdoor, pinterest)
