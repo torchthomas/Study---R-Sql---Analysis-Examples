@@ -1,0 +1,60 @@
+# @ Settings:
+rm(list=ls()); gc(); options(digits = 22)
+options(scipen=3)                           # turn off scientific notation
+options(tibble.print_max = 30)
+memory.limit(size=2500000)                  # memory limit
+
+# @ Library/Functions
+readInPackages = function(packages){
+  #for reading in packages
+  packsInstalling <- packages[!packages %in% installed.packages()]
+  for(lib in packsInstalling) install.packages(lib, dependencies = TRUE)
+  sapply(packages, require, character=TRUE)
+}
+needPacks <- {c( 
+  "tidyverse","ggplot2", "stringr","magrittr","lubridate","data.table",
+  "dtplyr", "inspectdf","skimr","RPostgreSQL","DBI","RPostgres","tictoc",'censusxy','glue', 'sf'
+)}; readInPackages(needPacks)
+###### ALL THE ABOVE IS IN NEARLY ALL SCRIPTS I MAKE (95%+)
+
+
+getwd();setwd("C:/Users/yourname/desktop"); getwd()
+#@LOGIN info
+{
+  pw<<- {
+    'abc'
+  }
+  host<<-{
+    'awshostingurl.com'
+  }
+  CONNECTION <<- {dbConnect(RPostgres::Postgres(), host= host, port='5432'
+                           , dbname='databasename', user='username', password=pw)}
+}
+
+#@FUNCTIONS
+  fn_dbReconnect = function(conn_anal){
+    if(dbIsValid(conn_anal)!=T){
+    #connections time out, this connects so you don't send a command to the database with a 'dead' connection, you'll understand when you see it used
+      CONNECTION <<- dbConnect(RPostgres::Postgres(),host=host,port='5432',dbname='databasename', user='username', password=pw)
+    }
+  };
+
+#set dir
+getwd()
+setwd("C:/Users/yourname/desktop")  
+
+#below is a query to generate a table in a psql db
+query = { 
+  "select var1,var2,var3
+  from tablename
+  where var in ('a','b','c');"}
+  
+# below we reconnect to the database in case our CONNECTION timed out
+fn_dbReconnect(conn_anal = conn_anal)
+df = dbGetQuery(CONNECTION,query)  # pull data
+
+#now that the data is pulled do whatever exploration you want, then you can write it to a db using 
+dbCreateTable(CONNECTION,'newtablename',df) #instantiate schema (i.e., no rows, you set types of the columns, i.e., a column varx might expect integers while vary expects strings)
+dbAppendTable(CONNECTION,'newtablename',df) #bulk append the data, essentially, an insert
+
+        
